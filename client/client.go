@@ -257,7 +257,6 @@ func NewClient(cfg *config.Config, consulSyncer *consul.Syncer, logger *log.Logg
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch consul ACL token: %v", err)
 	}
-	c.logger.Printf("[INFO] Consul ACL secret: %#v\n", secret)
 
 	errCh := c.vaultClient.RenewLease(secret.LeaseID, secret.LeaseDuration)
 	go func(errCh <-chan error) {
@@ -269,7 +268,10 @@ func NewClient(cfg *config.Config, consulSyncer *consul.Syncer, logger *log.Logg
 			}
 		}
 	}(errCh)
-	c.logger.Printf("[INFO] RenewLease returned")
+
+	if err := c.vaultClient.StopRenewLease(secret.LeaseID); err != nil {
+		c.logger.Printf("StopRenewLease failed: %v", err)
+	}
 
 	/*
 		time.Sleep(10 * time.Second)
@@ -363,6 +365,8 @@ func (c *Client) Shutdown() error {
 	if c.shutdown {
 		return nil
 	}
+
+	c.vaultClient.Stop()
 
 	// Destroy all the running allocations.
 	if c.config.DevMode {

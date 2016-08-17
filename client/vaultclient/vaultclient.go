@@ -309,17 +309,25 @@ func (c *vaultClient) run() {
 }
 
 func (c *vaultClient) StopRenewToken(token string) error {
-	if !c.IsTracked(token) {
+	return c.stopRenew(token)
+}
+
+func (c *vaultClient) StopRenewLease(leaseId string) error {
+	return c.stopRenew(leaseId)
+}
+
+func (c *vaultClient) stopRenew(id string) error {
+	if !c.IsTracked(id) {
 		return nil
 	}
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if err := c.heap.Remove(token); err != nil {
+	if err := c.heap.Remove(id); err != nil {
 		return fmt.Errorf("failed to remove heap entry: %v", err)
 	}
-	delete(c.heap.heapMap, token)
+	delete(c.heap.heapMap, id)
 
 	// Signal an update.
 	if c.running {
@@ -329,10 +337,6 @@ func (c *vaultClient) StopRenewToken(token string) error {
 		}
 	}
 
-	return nil
-}
-
-func (c *vaultClient) StopRenewLease(string) error {
 	return nil
 }
 
