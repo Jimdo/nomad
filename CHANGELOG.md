@@ -20,6 +20,7 @@ IMPROVEMENTS:
     GH-1458]
   * cli: `nomad node-status` shows volume name for non-physical volumes instead
     of showing 0B used [GH-1538]
+  * cli: `nomad status` shows the create time of allocations [GH-1540]
   * client: Add killing event to task state [GH-1457]
   * client: Fingerprint network speed on Windows [GH-1443]
   * discovery: Support for initial check status [GH-1562]
@@ -46,12 +47,14 @@ BUG FIXES:
   * agent: Fix advertise address when using IPv6 [GH-1465]
   * cli: Fix node-status when using IPv6 advertise address [GH-1465]
   * client: Task start errors adhere to restart policy mode [GH-1405]
+  * client: Reregister with servers if node is unregistered [GH-1593]
   * client: Killing an allocation doesn't cause allocation stats to block
     [GH-1454]
   * driver/docker: Disable swap on docker driver [GH-1480]
   * driver/docker: Fix improper gating on priviledged mode [GH-1506]
   * driver/docker: Default network type is "nat" on Windows [GH-1521]
   * driver/docker: Cleanup created volume when destroying container [GH-1519]
+  * driver/rkt: Set host environment variables [GH-1581]
   * driver/rkt: Validate the command and trust_prefix configs [GH-1493]
   * plan: Plan on system jobs discounts nodes that do not meet required
     constraints [GH-1568]

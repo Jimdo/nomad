@@ -7,7 +7,7 @@ services:
 language: go
 
 go:
-  - 1.6.2
+  - tip
 
 matrix:
   allow_failures:
@@ -16,10 +16,11 @@ matrix:
 branches:
   only:
     - master
+    - /^f-.*$/
 
 install:
   - make travis
   - make bootstrap
 
 script:
-  - make test
+  - travis_wait make test

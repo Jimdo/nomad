@@ -39,9 +39,6 @@ const (
 	// version to maintain an uniform interface across all drivers
 	minRktVersion = "0.14.0"
 
-	// bytesToMB is the conversion from bytes to megabytes.
-	bytesToMB = 1024 * 1024
-
 	// The key populated in the Node Attributes to indicate the presence of the
 	// Rkt driver
 	rktDriverAttr = "driver.rkt"
@@ -241,7 +238,7 @@ func (d *RktDriver) Start(ctx *ExecContext, task *structs.Task) (DriverHandle, e
 	}
 
 	// Add memory isolator
-	cmdArgs = append(cmdArgs, fmt.Sprintf("--memory=%vM", int64(task.Resources.MemoryMB)*bytesToMB))
+	cmdArgs = append(cmdArgs, fmt.Sprintf("--memory=%vM", int64(task.Resources.MemoryMB)))
 
 	// Add CPU isolator
 	cmdArgs = append(cmdArgs, fmt.Sprintf("--cpu=%vm", int64(task.Resources.CPU)))
@@ -275,6 +272,10 @@ func (d *RktDriver) Start(ctx *ExecContext, task *structs.Task) (DriverHandle, e
 			cmdArgs = append(cmdArgs, fmt.Sprintf("%v", arg))
 		}
 	}
+
+	// Set the host environment variables.
+	filter := strings.Split(d.config.ReadDefault("env.blacklist", config.DefaultEnvBlacklist), ",")
+	d.taskEnv.AppendHostEnvvars(filter)
 
 	bin, err := discover.NomadExecutable()
 	if err != nil {
@@ -326,7 +327,7 @@ func (d *RktDriver) Start(ctx *ExecContext, task *structs.Task) (DriverHandle, e
 		doneCh:         make(chan struct{}),
 		waitCh:         make(chan *dstructs.WaitResult, 1),
 	}
-	if h.executor.SyncServices(consulContext(d.config, "")); err != nil {
+	if err := h.executor.SyncServices(consulContext(d.config, "")); err != nil {
 		h.logger.Printf("[ERR] driver.rkt: error registering services for task: %q: %v", task.Name, err)
 	}
 	go h.run()
@@ -367,7 +368,7 @@ func (d *RktDriver) Open(ctx *ExecContext, handleID string) (DriverHandle, error
 		doneCh:         make(chan struct{}),
 		waitCh:         make(chan *dstructs.WaitResult, 1),
 	}
-	if h.executor.SyncServices(consulContext(d.config, "")); err != nil {
+	if err := h.executor.SyncServices(consulContext(d.config, "")); err != nil {
 		h.logger.Printf("[ERR] driver.rkt: error registering services: %v", err)
 	}
 	go h.run()
