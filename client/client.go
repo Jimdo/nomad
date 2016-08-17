@@ -259,6 +259,18 @@ func NewClient(cfg *config.Config, consulSyncer *consul.Syncer, logger *log.Logg
 	}
 	c.logger.Printf("[INFO] Consul ACL secret: %#v\n", secret)
 
+	errCh := c.vaultClient.RenewLease(secret.LeaseID, secret.LeaseDuration)
+	go func(errCh <-chan error) {
+		var err error
+		for {
+			select {
+			case err = <-errCh:
+				c.logger.Printf("[INFO] Error while renewing the lease: %v", err)
+			}
+		}
+	}(errCh)
+	c.logger.Printf("[INFO] RenewLease returned")
+
 	/*
 		time.Sleep(10 * time.Second)
 
