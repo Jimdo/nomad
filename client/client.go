@@ -144,6 +144,7 @@ type Client struct {
 	shutdownCh   chan struct{}
 	shutdownLock sync.Mutex
 
+	// client to interact with vault for token and secret renewals
 	vaultClient vaultclient.VaultClient
 }
 
@@ -210,6 +211,7 @@ func NewClient(cfg *config.Config, consulSyncer *consul.Syncer, logger *log.Logg
 		return nil, fmt.Errorf("failed to create client Consul syncer: %v", err)
 	}
 
+	// Setup the Vault client for token and secret renewals
 	if err := c.setupVaultClient(); err != nil {
 		return nil, fmt.Errorf("failed to create vault client: %v", err)
 	}
@@ -239,7 +241,7 @@ func NewClient(cfg *config.Config, consulSyncer *consul.Syncer, logger *log.Logg
 	// populated by periodically polling Consul, if available.
 	go c.rpcProxy.Run()
 
-	// Start renewing Vault data
+	// Start renewing tokens and secrets
 	go c.vaultClient.Start()
 
 	// TODO: Test code begins
@@ -367,6 +369,7 @@ func (c *Client) Shutdown() error {
 		return nil
 	}
 
+	// Stop renewing tokens and secrets
 	c.vaultClient.Stop()
 
 	// Destroy all the running allocations.
@@ -1276,6 +1279,8 @@ func (c *Client) addAlloc(alloc *structs.Allocation) error {
 	return nil
 }
 
+// setupVaultClient creates an object to periodically renew tokens and secrets
+// with vault.
 func (c *Client) setupVaultClient() error {
 	if c.config.VaultConfig == nil {
 		return fmt.Errorf("nil vaultConfig")
